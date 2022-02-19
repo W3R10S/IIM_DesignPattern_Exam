@@ -9,6 +9,8 @@ public class Bullet : MonoBehaviour
     [SerializeField] Rigidbody2D _rb;
     [SerializeField] float _speed;
     [SerializeField] float _collisionCooldown = 0.5f;
+    [SerializeField] UnityEvent OnTouch;
+    [SerializeField] UnityEvent<Transform> OnTouchParticle;
 
     public Vector3 Direction { get; private set; }
     public int Power { get; private set; }
@@ -36,15 +38,27 @@ public class Bullet : MonoBehaviour
     {
         if (Time.fixedTime < LaunchTime + _collisionCooldown) return;
 
-        collision.GetComponent<IHealth>()?.TakeDamage(Power);
-        Destroy(gameObject);
+        if (collision.gameObject.layer != 10)
+        {
+            collision.GetComponent<IHealth>()?.TakeDamage(Power);
+            collision.GetComponent<ITouchable>()?.Touch(Power);
+            OnTouch?.Invoke();
+            OnTouchParticle?.Invoke(transform);
+            gameObject.SetActive(false);
+        }
     }
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (Time.fixedTime < LaunchTime + _collisionCooldown) return;
 
-        collision.collider.GetComponent<IHealth>()?.TakeDamage(Power);
-        Destroy(gameObject);
+        if (collision.gameObject.layer != 10)
+        {
+            collision.collider.GetComponent<IHealth>()?.TakeDamage(Power);
+            collision.gameObject.GetComponent<ITouchable>()?.Touch(Power);
+            OnTouch?.Invoke();
+            OnTouchParticle?.Invoke(transform);
+            gameObject.SetActive(false);
+        }
     }
 
     private void Health_OnDamage(int arg0)
